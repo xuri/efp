@@ -287,7 +287,7 @@ func (ps *Parser) getTokens(formula string) Tokens {
 			continue
 		}
 
-		// independent character evaulation (order not important)
+		// independent character evaluation (order not important)
 		// establish state-dependent character evaluations
 		if ps.currentChar() == "\"" {
 			if len(ps.Token) > 0 {
