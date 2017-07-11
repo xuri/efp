@@ -1,9 +1,9 @@
 # EFP (Excel Formula Parser)
 
-[![Build Status](https://travis-ci.org/Luxurioust/efp.svg?branch=master)](https://travis-ci.org/Luxurioust/efp)
-[![Code Coverage](https://codecov.io/gh/Luxurioust/efp/branch/master/graph/badge.svg)](https://codecov.io/gh/Luxurioust/efp)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Luxurioust/efp)](https://goreportcard.com/report/github.com/Luxurioust/efp)
-[![GoDoc](https://godoc.org/github.com/Luxurioust/efp?status.svg)](https://godoc.org/github.com/Luxurioust/efp)
+[![Build Status](https://travis-ci.org/xuri/efp.svg?branch=master)](https://travis-ci.org/xuri/efp)
+[![Code Coverage](https://codecov.io/gh/xuri/efp/branch/master/graph/badge.svg)](https://codecov.io/gh/xuri/efp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xuri/efp)](https://goreportcard.com/report/github.com/xuri/efp)
+[![GoDoc](https://godoc.org/github.com/xuri/efp?status.svg)](https://godoc.org/github.com/xuri/efp)
 [![Licenses](https://img.shields.io/badge/license-bsd-orange.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 Using EFP (Excel Formula Parser) you can get an Abstract Syntax Tree (AST) from Excel formula.
@@ -11,7 +11,7 @@ Using EFP (Excel Formula Parser) you can get an Abstract Syntax Tree (AST) from 
 ## Installation
 
 ```go
-go get github.com/Luxurioust/efp
+go get github.com/xuri/efp
 ```
 
 ## Example
@@ -19,7 +19,7 @@ go get github.com/Luxurioust/efp
 ```go
 package main
 
-import "github.com/Luxurioust/efp"
+import "github.com/xuri/efp"
 
 func main() {
     ps := efp.ExcelParser()
