@@ -5,6 +5,7 @@ import "testing"
 func TestEFP(t *testing.T) {
 	formulae := []string{
 		// Simple test formulae
+		`="あいうえお"&H3&"b"`,
 		`=1+3+5`,
 		`=3 * 4 + 5`,
 		`=50`,
