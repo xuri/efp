@@ -570,7 +570,7 @@ func (ps *Parser) getTokens(formula string) Tokens {
 // doubleChar provides function to get two characters after the current
 // position.
 func (ps *Parser) doubleChar() string {
-	if len(ps.Formula) >= ps.Offset+2 {
+	if len([]rune(ps.Formula)) >= ps.Offset+2 {
 		return string([]rune(ps.Formula)[ps.Offset : ps.Offset+2])
 	}
 	return ""
@@ -591,7 +591,7 @@ func (ps *Parser) nextChar() string {
 
 // EOF provides function to check whether or not end of tokens stack.
 func (ps *Parser) EOF() bool {
-	return ps.Offset >= len(ps.Formula)
+	return ps.Offset >= len([]rune(ps.Formula))
 }
 
 // Parse provides function to parse formula as a token stream (list).
