@@ -1,6 +1,6 @@
 # EFP (Excel Formula Parser)
 
-[![Build Status](https://travis-ci.org/xuri/efp.svg?branch=master)](https://travis-ci.org/xuri/efp)
+[![Build Status](https://travis-ci.com/xuri/efp.svg?branch=master)](https://travis-ci.com/xuri/efp)
 [![Code Coverage](https://codecov.io/gh/xuri/efp/branch/master/graph/badge.svg)](https://codecov.io/gh/xuri/efp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xuri/efp)](https://goreportcard.com/report/github.com/xuri/efp)
 [![GoDoc](https://godoc.org/github.com/xuri/efp?status.svg)](https://godoc.org/github.com/xuri/efp)
