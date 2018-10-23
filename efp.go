@@ -124,20 +124,12 @@ func (tk *Tokens) reset() {
 
 // BOF provides function to check whether or not beginning of list.
 func (tk *Tokens) BOF() bool {
-	var bof bool
-	if tk.Index <= 0 {
-		bof = true
-	}
-	return bof
+	return tk.Index <= 0
 }
 
 // EOF provides function to check whether or not end of list.
 func (tk *Tokens) EOF() bool {
-	var eof bool
-	if tk.Index >= (len(tk.Items) - 1) {
-		eof = true
-	}
-	return eof
+	return tk.Index >= (len(tk.Items) - 1)
 }
 
 // moveNext provides function to move the index along one.
@@ -218,6 +210,12 @@ func ExcelParser() Parser {
 // getTokens return a token stream (list).
 func (ps *Parser) getTokens(formula string) Tokens {
 	ps.Formula = strings.TrimSpace(ps.Formula)
+	f := []rune(ps.Formula)
+	if len(f) > 0 {
+		if string(f[0]) != "=" {
+			ps.Formula = "=" + ps.Formula
+		}
+	}
 
 	// state-dependent character evaluation (order is important)
 	for !ps.EOF() {
