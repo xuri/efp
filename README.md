@@ -5,6 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/xuri/efp)](https://goreportcard.com/report/github.com/xuri/efp)
 [![GoDoc](https://godoc.org/github.com/xuri/efp?status.svg)](https://godoc.org/github.com/xuri/efp)
 [![Licenses](https://img.shields.io/badge/license-bsd-orange.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fxuri%2Fefp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fxuri%2Fefp?ref=badge_shield)
 
 Using EFP (Excel Formula Parser) you can get an Abstract Syntax Tree (AST) from Excel formula.
 
@@ -53,3 +54,5 @@ EFP (Excel Formula Parser) is a Golang port of [E. W. Bachtal's](http://ewbi.blo
 ## Licenses
 
 This program is under the terms of the BSD 3-Clause License. See [https://opensource.org/licenses/BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause).
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fxuri%2Fefp.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fxuri%2Fefp?ref=badge_large)
