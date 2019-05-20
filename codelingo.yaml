@@ -1,18 +1,3 @@
 tenets:
-  - name:  len-rune-multibyte
-    flows:
-      codelingo/review:
-        comment: ps.Forumla supports multibyte characters, so you should convert it to a byte slice ([]byte) before finding its length.
-    query: |
-      import codelingo/ast/go
-      
-      @review comment
-      go.call_expr(depth = any):
-        go.ident:
-          name == "len"
-        go.args:
-          go.selector_expr:
-            go.ident:
-              name == "ps"
-            go.ident:
-              name == "Formula"
+- import: codelingo/effective-go
+- import: codelingo/code-review-comments
