@@ -581,7 +581,7 @@ func (ps *Parser) currentChar() string {
 
 // nextChar provides function to get the next character of the current position.
 func (ps *Parser) nextChar() string {
-	if len(ps.Formula) >= ps.Offset+1 {
+	if len([]rune(ps.Formula)) >= ps.Offset+1 {
 		return ""
 	}
 	return string([]rune(ps.Formula)[ps.Offset+1])
