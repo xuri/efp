@@ -1,8 +1,8 @@
 // Package efp (Excel Formula Parser) tokenise an Excel formula using an
 // implementation of E. W. Bachtal's algorithm, found here:
-// http://ewbi.blogs.com/develops/2004/12/excel_formula_p.html
+// https://ewbi.blogs.com/develops/2004/12/excel_formula_p.html
 //
-// Golang version by Ri Xu: https://xuri.me
+// Go version by Ri Xu: https://xuri.me
 package efp
 
 import (
@@ -172,6 +172,12 @@ func (tk *Tokens) push(token Token) {
 
 // pop provides function to pop a token off the stack.
 func (tk *Tokens) pop() Token {
+	if len(tk.Items) == 0 {
+		return Token{
+			TType:    TokenTypeFunction,
+			TSubType: TokenSubTypeStop,
+		}
+	}
 	t := tk.Items[len(tk.Items)-1]
 	tk.Items = tk.Items[:len(tk.Items)-1]
 	return fToken("", t.TType, TokenSubTypeStop)

@@ -4,6 +4,8 @@ import "testing"
 
 func TestEFP(t *testing.T) {
 	formulae := []string{
+		`=SUM())`,
+		`=SUM("")`,
 		// Simple test formulae
 		`="あいうえお"&H3&"b"`,
 		`=1+3+5`,
