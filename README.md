@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/xuri/efp/workflows/Go/badge.svg)](https://github.com/xuri/efp/actions?workflow=Go)
 [![Code Coverage](https://codecov.io/gh/xuri/efp/branch/master/graph/badge.svg)](https://codecov.io/gh/xuri/efp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xuri/efp)](https://goreportcard.com/report/github.com/xuri/efp)
-[![GoDoc](https://godoc.org/github.com/xuri/efp?status.svg)](https://godoc.org/github.com/xuri/efp)
+[![go.dev](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/xuri/efp)
 [![Licenses](https://img.shields.io/badge/license-bsd-orange.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fxuri%2Fefp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fxuri%2Fefp?ref=badge_shield)
 
