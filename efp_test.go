@@ -25,6 +25,7 @@ func TestEFP(t *testing.T) {
 		`=SUM(D9:D11,E9:E11,F9:F11)`,
 		`=SUM((D9:D11,(E9:E11,F9:F11)))`,
 		`=((D2 * D3) + D4) & " should be 10"`,
+		`=AND(1=1),1=1`,
 		// E. W. Bachtal's test formulae
 		`=IF(P5=1.0,"NA",IF(P5=2.0,"A",IF(P5=3.0,"B",IF(P5=4.0,"C",IF(P5=5.0,"D",IF(P5=6.0,"E",IF(P5=7.0,"F",IF(P5=8.0,"G"))))))))`,
 		`={SUM(B2:D2*B3:D3)}`,

@@ -2,7 +2,7 @@
 // implementation of E. W. Bachtal's algorithm, found here:
 // https://ewbi.blogs.com/develops/2004/12/excel_formula_p.html
 //
-// Go version by Ri Xu: https://xuri.me
+// Go language version by Ri Xu: https://xuri.me
 package efp
 
 import (
@@ -199,6 +199,9 @@ func (tk *Tokens) value() string {
 
 // tp return the top token's type.
 func (tk *Tokens) tp() string {
+	if tk.token() == nil {
+		return ""
+	}
 	return tk.token().TType
 }
 
