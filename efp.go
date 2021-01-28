@@ -194,6 +194,9 @@ func (tk *Tokens) token() *Token {
 
 // value return the top token's value.
 func (tk *Tokens) value() string {
+	if tk.token() == nil {
+		return ""
+	}
 	return tk.token().TValue
 }
 
@@ -207,6 +210,9 @@ func (tk *Tokens) tp() string {
 
 // subtype return the top token's subtype.
 func (tk *Tokens) subtype() string {
+	if tk.token() == nil {
+		return ""
+	}
 	return tk.token().TSubType
 }
 

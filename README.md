@@ -11,7 +11,7 @@ Using EFP (Excel Formula Parser) you can get an Abstract Syntax Tree (AST) from 
 
 ## Installation
 
-```go
+```bash
 go get github.com/xuri/efp
 ```
 
@@ -31,7 +31,7 @@ func main() {
 
 Get AST
 
-```
+```text
 SUM <Function> <Start>
     A3 <Operand> <Range>
     + <OperatorInfix> <Math>
