@@ -6,6 +6,7 @@
 package efp
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -276,7 +277,7 @@ func (ps *Parser) getTokens(formula string) Tokens {
 		// bracketed strings (range offset or linked workbook name)
 		// no embeds (changed to "()" by Excel)
 		// end does not mark a token
-		if ps.InError {
+		if ps.InRange {
 			if ps.currentChar() == "]" {
 				ps.InRange = false
 			}
@@ -298,6 +299,16 @@ func (ps *Parser) getTokens(formula string) Tokens {
 				ps.Token = ""
 			}
 			continue
+		}
+
+		// scientific notation check
+		if strings.ContainsAny(ps.currentChar(), "+-") && len(ps.Token) > 1 {
+			match, _ := regexp.MatchString(`^[1-9]{1}(\.[0-9]+)?E{1}$`, ps.Token)
+			if match {
+				ps.Token += ps.currentChar()
+				ps.Offset++
+				continue
+			}
 		}
 
 		// independent character evaluation (order not important)
