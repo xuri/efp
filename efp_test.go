@@ -33,6 +33,9 @@ func TestEFP(t *testing.T) {
 		`=#]#NUM!`,
 		`=3.1E-24-2.1E-24`,
 		`''`,
+		`=IF(R#`,
+		`=IF(R{`,
+		`=""+'''`,
 		`=1%2`,
 		`={1,2}`,
 		`=TRUE`,
@@ -61,4 +64,8 @@ func TestEFP(t *testing.T) {
 		p.Tokens.value()
 		p.Tokens.subtype()
 	}
+	tk := Tokens{Index: -1}
+	tk.current()
+	tk.next()
+	tk.previous()
 }

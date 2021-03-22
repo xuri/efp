@@ -607,10 +607,10 @@ func (ps *Parser) currentChar() string {
 
 // nextChar provides function to get the next character of the current position.
 func (ps *Parser) nextChar() string {
-	if len([]rune(ps.Formula)) >= ps.Offset+1 {
-		return ""
+	if len([]rune(ps.Formula)) >= ps.Offset+2 {
+		return string([]rune(ps.Formula)[ps.Offset+1 : ps.Offset+2])
 	}
-	return string([]rune(ps.Formula)[ps.Offset+1])
+	return ""
 }
 
 // EOF provides function to check whether or not end of tokens stack.
