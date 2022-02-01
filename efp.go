@@ -1,4 +1,4 @@
-// Package efp (Excel Formula Parser) tokenise an Excel formula using an
+// Package efp (Excel Formula Parser) tokenize an Excel formula using an
 // implementation of E. W. Bachtal's algorithm, found here:
 // https://ewbi.blogs.com/develops/2004/12/excel_formula_p.html
 //
@@ -291,9 +291,7 @@ func (ps *Parser) getTokens(formula string) Tokens {
 		if ps.InError {
 			ps.Token += ps.currentChar()
 			ps.Offset++
-			errors := map[string]string{",#NULL!,": "", ",#DIV/0!,": "", ",#VALUE!,": "", ",#REF!,": "", ",#NAME?,": "", ",#NUM!,": "", ",#N/A,": ""}
-			_, ok := errors[","+ps.Token+","]
-			if ok {
+			if inStrSlice([]string{",#NULL!,", ",#DIV/0!,", ",#VALUE!,", ",#REF!,", ",#NAME?,", ",#NUM!,", ",#N/A,"}, ","+ps.Token+",") != -1 {
 				ps.InError = false
 				ps.Tokens.add(ps.Token, TokenTypeOperand, TokenSubTypeError)
 				ps.Token = ""
@@ -303,8 +301,8 @@ func (ps *Parser) getTokens(formula string) Tokens {
 
 		// scientific notation check
 		if strings.ContainsAny(ps.currentChar(), "+-") && len(ps.Token) > 1 {
-			match, _ := regexp.MatchString(`^[1-9]{1}(\.[0-9]+)?E{1}$`, ps.Token)
-			if match {
+			r, _ := regexp.Compile(`^[1-9]{1}(\.[0-9]+)?E{1}$`)
+			if r.MatchString(ps.Token) {
 				ps.Token += ps.currentChar()
 				ps.Offset++
 				continue
@@ -405,9 +403,7 @@ func (ps *Parser) getTokens(formula string) Tokens {
 		}
 
 		// multi-character comparators
-		comparators := map[string]string{",>=,": "", ",<=,": "", ",<>,": ""}
-		_, ok := comparators[","+ps.doubleChar()+","]
-		if ok {
+		if inStrSlice([]string{",>=,", ",<=,", ",<>,"}, ","+ps.doubleChar()+",") != -1 {
 			if len(ps.Token) > 0 {
 				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
 				ps.Token = ""
@@ -418,9 +414,7 @@ func (ps *Parser) getTokens(formula string) Tokens {
 		}
 
 		// standard infix operators
-		operators := map[string]string{"+": "", "-": "", "*": "", "/": "", "^": "", "&": "", "=": "", ">": "", "<": ""}
-		_, ok = operators[ps.currentChar()]
-		if ok {
+		if strings.ContainsAny("+-*/^&=><", ps.currentChar()) {
 			if len(ps.Token) > 0 {
 				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
 				ps.Token = ""
@@ -540,9 +534,7 @@ func (ps *Parser) getTokens(formula string) Tokens {
 		}
 
 		if (token.TType == TokenTypeOperatorInfix) && (len(token.TSubType) == 0) {
-			op := map[string]string{"<": "", ">": "", "=": ""}
-			_, ok := op[token.TValue[0:1]]
-			if ok {
+			if strings.ContainsAny(token.TValue[0:1], "<>=") {
 				token.TSubType = TokenSubTypeLogical
 			} else if token.TValue == "&" {
 				token.TSubType = TokenSubTypeConcatenation
@@ -666,4 +658,15 @@ func (ps *Parser) Render() string {
 		}
 	}
 	return output
+}
+
+// inStrSlice provides a method to check if an element is present in an array,
+// and return the index of its location, otherwise return -1.
+func inStrSlice(a []string, x string) int {
+	for idx, n := range a {
+		if x == n {
+			return idx
+		}
+	}
+	return -1
 }
