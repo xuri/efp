@@ -108,11 +108,11 @@ type Parser struct {
 	Tokens     Tokens
 	TokenStack Tokens
 	Offset     int
-	Token      string
-	InString   bool
-	InPath     bool
-	InRange    bool
-	InError    bool
+	//Token      string
+	InString bool
+	InPath   bool
+	InRange  bool
+	InError  bool
 }
 
 // fToken provides function to encapsulate a formula token.
@@ -258,6 +258,8 @@ func (ps *Parser) getTokens() Tokens {
 		}
 	}
 
+	var token []rune
+
 	// state-dependent character evaluation (order is important)
 	for !ps.EOF() {
 
@@ -267,15 +269,15 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.InString {
 			if ps.currentChar() == QuoteDouble {
 				if ps.nextChar() == QuoteDouble {
-					ps.Token += string(QuoteDouble)
+					token = append(token, QuoteDouble)
 					ps.Offset++
 				} else {
 					ps.InString = false
-					ps.Tokens.add(ps.Token, TokenTypeOperand, TokenSubTypeText)
-					ps.Token = ""
+					ps.Tokens.add(string(token), TokenTypeOperand, TokenSubTypeText)
+					token = token[:0]
 				}
 			} else {
-				ps.Token += string(ps.currentChar())
+				token = append(token, ps.currentChar())
 			}
 			ps.Offset++
 			continue
@@ -287,13 +289,13 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.InPath {
 			if ps.currentChar() == QuoteSingle {
 				if ps.nextChar() == QuoteSingle {
-					ps.Token += string(QuoteSingle)
+					token = append(token, QuoteSingle)
 					ps.Offset++
 				} else {
 					ps.InPath = false
 				}
 			} else {
-				ps.Token += string(ps.currentChar())
+				token = append(token, ps.currentChar())
 			}
 			ps.Offset++
 			continue
@@ -306,7 +308,7 @@ func (ps *Parser) getTokens() Tokens {
 			if ps.currentChar() == BracketClose {
 				ps.InRange = false
 			}
-			ps.Token += string(ps.currentChar())
+			token = append(token, ps.currentChar())
 			ps.Offset++
 			continue
 		}
@@ -314,21 +316,21 @@ func (ps *Parser) getTokens() Tokens {
 		// error values
 		// end marks a token, determined from absolute list of values
 		if ps.InError {
-			ps.Token += string(ps.currentChar())
+			token = append(token, ps.currentChar())
 			ps.Offset++
 
 			if _, isError := errorSet[ps.doubleChar()]; isError {
 				ps.InError = false
-				ps.Tokens.add(ps.Token, TokenTypeOperand, TokenSubTypeError)
-				ps.Token = ""
+				ps.Tokens.add(string(token), TokenTypeOperand, TokenSubTypeError)
+				token = token[:0]
 			}
 			continue
 		}
 
 		// scientific notation check
-		if _, isSN := operatorsSN[ps.currentChar()]; isSN && len(ps.Token) > 1 {
-			if expRegex.MatchString(ps.Token) {
-				ps.Token += string(ps.currentChar())
+		if _, isSN := operatorsSN[ps.currentChar()]; isSN && len(token) > 1 {
+			if expRegex.MatchString(string(token)) {
+				token = append(token, ps.currentChar())
 				ps.Offset++
 				continue
 			}
@@ -337,10 +339,10 @@ func (ps *Parser) getTokens() Tokens {
 		// independent character evaluation (order not important)
 		// establish state-dependent character evaluations
 		if ps.currentChar() == QuoteDouble {
-			if len(ps.Token) > 0 {
+			if len(token) > 0 {
 				// not expected
-				ps.Tokens.add(ps.Token, TokenTypeUnknown, "")
-				ps.Token = ""
+				ps.Tokens.add(string(token), TokenTypeUnknown, "")
+				token = token[:0]
 			}
 			ps.InString = true
 			ps.Offset++
@@ -348,10 +350,10 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		if ps.currentChar() == QuoteSingle {
-			if len(ps.Token) > 0 {
+			if len(token) > 0 {
 				// not expected
-				ps.Tokens.add(ps.Token, TokenTypeUnknown, "")
-				ps.Token = ""
+				ps.Tokens.add(string(token), TokenTypeUnknown, "")
+				token = token[:0]
 			}
 			ps.InPath = true
 			ps.Offset++
@@ -360,29 +362,29 @@ func (ps *Parser) getTokens() Tokens {
 
 		if ps.currentChar() == BracketOpen {
 			ps.InRange = true
-			ps.Token += string(ps.currentChar())
+			token = append(token, ps.currentChar())
 			ps.Offset++
 			continue
 		}
 
 		if ps.currentChar() == ErrorStart {
-			if len(ps.Token) > 0 {
+			if len(token) > 0 {
 				// not expected
-				ps.Tokens.add(ps.Token, TokenTypeUnknown, "")
-				ps.Token = ""
+				ps.Tokens.add(string(token), TokenTypeUnknown, "")
+				token = token[:0]
 			}
 			ps.InError = true
-			ps.Token += string(ps.currentChar())
+			token = append(token, ps.currentChar())
 			ps.Offset++
 			continue
 		}
 
 		// mark start and end of arrays and array rows
 		if ps.currentChar() == BraceOpen {
-			if len(ps.Token) > 0 {
+			if len(token) > 0 {
 				// not expected
-				ps.Tokens.add(ps.Token, TokenTypeUnknown, "")
-				ps.Token = ""
+				ps.Tokens.add(string(token), TokenTypeUnknown, "")
+				token = token[:0]
 			}
 			ps.TokenStack.push(ps.Tokens.add("ARRAY", TokenTypeFunction, TokenSubTypeStart))
 			ps.TokenStack.push(ps.Tokens.add("ARRAYROW", TokenTypeFunction, TokenSubTypeStart))
@@ -391,9 +393,9 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		if ps.currentChar() == Semicolon {
-			if len(ps.Token) > 0 {
-				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
+				token = token[:0]
 			}
 			ps.Tokens.addRef(ps.TokenStack.pop())
 			ps.Tokens.add(string(Comma), TokenTypeArgument, "")
@@ -403,9 +405,9 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		if ps.currentChar() == BraceClose {
-			if len(ps.Token) > 0 {
-				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
+				token = token[:0]
 			}
 			ps.Tokens.addRef(ps.TokenStack.pop())
 			ps.Tokens.addRef(ps.TokenStack.pop())
@@ -415,9 +417,9 @@ func (ps *Parser) getTokens() Tokens {
 
 		// trim white-space
 		if ps.currentChar() == Whitespace {
-			if len(ps.Token) > 0 {
-				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
+				token = token[:0]
 			}
 			ps.Tokens.add("", TokenTypeWhitespace, "")
 			ps.Offset++
@@ -429,9 +431,9 @@ func (ps *Parser) getTokens() Tokens {
 
 		// multi-character comparators
 		if _, isComparison := comparisonSet[ps.doubleChar()]; isComparison {
-			if len(ps.Token) > 0 {
-				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
+				token = token[:0]
 			}
 			ps.Tokens.add(ps.doubleChar(), TokenTypeOperatorInfix, TokenSubTypeLogical)
 			ps.Offset += 2
@@ -440,9 +442,9 @@ func (ps *Parser) getTokens() Tokens {
 
 		// standard infix operators
 		if _, isInfix := operatorsInfix[ps.currentChar()]; isInfix {
-			if len(ps.Token) > 0 {
-				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
+				token = token[:0]
 			}
 			ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorInfix, "")
 			ps.Offset++
@@ -451,9 +453,9 @@ func (ps *Parser) getTokens() Tokens {
 
 		// standard postfix operators
 		if ps.currentChar() == OperatorsPostfix {
-			if len(ps.Token) > 0 {
-				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
+				token = token[:0]
 			}
 			ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorPostfix, "")
 			ps.Offset++
@@ -462,9 +464,9 @@ func (ps *Parser) getTokens() Tokens {
 
 		// start subexpression or function
 		if ps.currentChar() == ParenOpen {
-			if len(ps.Token) > 0 {
-				ps.TokenStack.push(ps.Tokens.add(ps.Token, TokenTypeFunction, TokenSubTypeStart))
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.TokenStack.push(ps.Tokens.add(string(token), TokenTypeFunction, TokenSubTypeStart))
+				token = token[:0]
 			} else {
 				ps.TokenStack.push(ps.Tokens.add("", TokenTypeSubexpression, TokenSubTypeStart))
 			}
@@ -474,9 +476,9 @@ func (ps *Parser) getTokens() Tokens {
 
 		// function, subexpression, array parameters
 		if ps.currentChar() == Comma {
-			if len(ps.Token) > 0 {
-				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
+				token = token[:0]
 			}
 			if ps.TokenStack.tp() != TokenTypeFunction {
 				ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorInfix, TokenSubTypeUnion)
@@ -489,9 +491,9 @@ func (ps *Parser) getTokens() Tokens {
 
 		// stop subexpression
 		if ps.currentChar() == ParenClose {
-			if len(ps.Token) > 0 {
-				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
-				ps.Token = ""
+			if len(token) > 0 {
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
+				token = token[:0]
 			}
 			ps.Tokens.addRef(ps.TokenStack.pop())
 			ps.Offset++
@@ -499,13 +501,13 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		// token accumulation
-		ps.Token += string(ps.currentChar())
+		token = append(token, ps.currentChar())
 		ps.Offset++
 	}
 
 	// dump remaining accumulation
-	if len(ps.Token) > 0 {
-		ps.Tokens.add(ps.Token, TokenTypeOperand, "")
+	if len(token) > 0 {
+		ps.Tokens.add(string(token), TokenTypeOperand, "")
 	}
 
 	// move all tokens to a new collection, excluding all unnecessary white-space tokens
