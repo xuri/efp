@@ -105,6 +105,7 @@ type Tokens struct {
 // tokens.
 type Parser struct {
 	Formula    string
+	fRune      []rune
 	Tokens     Tokens
 	TokenStack Tokens
 	Offset     int
@@ -257,6 +258,7 @@ func (ps *Parser) getTokens() Tokens {
 			ps.Formula = "=" + ps.Formula
 		}
 	}
+	ps.fRune = []rune(ps.Formula)
 
 	var token []rune
 
@@ -319,7 +321,7 @@ func (ps *Parser) getTokens() Tokens {
 			token = append(token, ps.currentChar())
 			ps.Offset++
 
-			if _, isError := errorSet[ps.doubleChar()]; isError {
+			if _, isError := errorSet[string(token)]; isError {
 				ps.InError = false
 				ps.Tokens.add(string(token), TokenTypeOperand, TokenSubTypeError)
 				token = token[:0]
@@ -613,28 +615,28 @@ func (ps *Parser) getTokens() Tokens {
 // doubleChar provides function to get two characters after the current
 // position.
 func (ps *Parser) doubleChar() string {
-	if len([]rune(ps.Formula)) >= ps.Offset+2 {
-		return string([]rune(ps.Formula)[ps.Offset : ps.Offset+2])
+	if len(ps.fRune) >= ps.Offset+2 {
+		return string(ps.fRune[ps.Offset : ps.Offset+2])
 	}
 	return ""
 }
 
 // currentChar provides function to get the character of the current position.
 func (ps *Parser) currentChar() rune {
-	return []rune(ps.Formula)[ps.Offset]
+	return ps.fRune[ps.Offset]
 }
 
 // nextChar provides function to get the next character of the current position.
 func (ps *Parser) nextChar() rune {
-	if len([]rune(ps.Formula)) >= ps.Offset+2 {
-		return []rune(ps.Formula)[ps.Offset+1]
+	if len(ps.fRune) >= ps.Offset+2 {
+		return ps.fRune[ps.Offset+1]
 	}
 	return 0
 }
 
 // EOF provides function to check whether end of tokens stack.
 func (ps *Parser) EOF() bool {
-	return ps.Offset >= len([]rune(ps.Formula))
+	return ps.Offset >= len(ps.fRune)
 }
 
 // Parse provides function to parse formula as a token stream (list).
