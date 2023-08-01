@@ -11,25 +11,39 @@ import (
 	"strings"
 )
 
+var operatorsSN map[rune]struct{}
+var operatorsInfix map[rune]struct{}
+
+func init() {
+	operatorsSN = make(map[rune]struct{}, len([]rune(OperatorsSN)))
+	for _, r := range OperatorsSN {
+		operatorsSN[r] = struct{}{}
+	}
+	operatorsInfix = make(map[rune]struct{}, len([]rune(OperatorsInfix)))
+	for _, r := range OperatorsInfix {
+		operatorsInfix[r] = struct{}{}
+	}
+}
+
 // QuoteDouble, QuoteSingle and other's constants are token definitions.
 const (
 	// Character constants
-	QuoteDouble  = "\""
-	QuoteSingle  = "'"
-	BracketClose = "]"
-	BracketOpen  = "["
-	BraceOpen    = "{"
-	BraceClose   = "}"
-	ParenOpen    = "("
-	ParenClose   = ")"
-	Semicolon    = ";"
-	Whitespace   = " "
-	Comma        = ","
-	ErrorStart   = "#"
+	QuoteDouble  = '"'
+	QuoteSingle  = '\''
+	BracketClose = ']'
+	BracketOpen  = '['
+	BraceOpen    = '{'
+	BraceClose   = '}'
+	ParenOpen    = '('
+	ParenClose   = ')'
+	Semicolon    = ';'
+	Whitespace   = ' '
+	Comma        = ','
+	ErrorStart   = '#'
 
 	OperatorsSN      = "+-"
 	OperatorsInfix   = "+-*/^&=><"
-	OperatorsPostfix = "%"
+	OperatorsPostfix = '%'
 
 	// Token type
 	TokenTypeNoop            = "Noop"
@@ -67,9 +81,8 @@ type Token struct {
 // Tokens directly maps the ordered list of tokens.
 // Attributes:
 //
-//    items - Ordered list
-//    index - Current position in the list
-//
+//	items - Ordered list
+//	index - Current position in the list
 type Tokens struct {
 	Index int
 	Items []Token
@@ -241,7 +254,7 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.InString {
 			if ps.currentChar() == QuoteDouble {
 				if ps.nextChar() == QuoteDouble {
-					ps.Token += QuoteDouble
+					ps.Token += string(QuoteDouble)
 					ps.Offset++
 				} else {
 					ps.InString = false
@@ -249,7 +262,7 @@ func (ps *Parser) getTokens() Tokens {
 					ps.Token = ""
 				}
 			} else {
-				ps.Token += ps.currentChar()
+				ps.Token += string(ps.currentChar())
 			}
 			ps.Offset++
 			continue
@@ -261,13 +274,13 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.InPath {
 			if ps.currentChar() == QuoteSingle {
 				if ps.nextChar() == QuoteSingle {
-					ps.Token += QuoteSingle
+					ps.Token += string(QuoteSingle)
 					ps.Offset++
 				} else {
 					ps.InPath = false
 				}
 			} else {
-				ps.Token += ps.currentChar()
+				ps.Token += string(ps.currentChar())
 			}
 			ps.Offset++
 			continue
@@ -280,7 +293,7 @@ func (ps *Parser) getTokens() Tokens {
 			if ps.currentChar() == BracketClose {
 				ps.InRange = false
 			}
-			ps.Token += ps.currentChar()
+			ps.Token += string(ps.currentChar())
 			ps.Offset++
 			continue
 		}
@@ -288,9 +301,9 @@ func (ps *Parser) getTokens() Tokens {
 		// error values
 		// end marks a token, determined from absolute list of values
 		if ps.InError {
-			ps.Token += ps.currentChar()
+			ps.Token += string(ps.currentChar())
 			ps.Offset++
-			if inStrSlice([]string{",#NULL!,", ",#DIV/0!,", ",#VALUE!,", ",#REF!,", ",#NAME?,", ",#NUM!,", ",#N/A,"}, Comma+ps.Token+Comma) != -1 {
+			if inStrSlice([]string{"#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"}, ps.Token) != -1 {
 				ps.InError = false
 				ps.Tokens.add(ps.Token, TokenTypeOperand, TokenSubTypeError)
 				ps.Token = ""
@@ -299,10 +312,10 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		// scientific notation check
-		if strings.ContainsAny(ps.currentChar(), OperatorsSN) && len(ps.Token) > 1 {
+		if _, isSN := operatorsSN[ps.currentChar()]; isSN && len(ps.Token) > 1 {
 			r, _ := regexp.Compile(`^[1-9]{1}(\.[0-9]+)?E{1}$`)
 			if r.MatchString(ps.Token) {
-				ps.Token += ps.currentChar()
+				ps.Token += string(ps.currentChar())
 				ps.Offset++
 				continue
 			}
@@ -334,7 +347,7 @@ func (ps *Parser) getTokens() Tokens {
 
 		if ps.currentChar() == BracketOpen {
 			ps.InRange = true
-			ps.Token += ps.currentChar()
+			ps.Token += string(ps.currentChar())
 			ps.Offset++
 			continue
 		}
@@ -346,7 +359,7 @@ func (ps *Parser) getTokens() Tokens {
 				ps.Token = ""
 			}
 			ps.InError = true
-			ps.Token += ps.currentChar()
+			ps.Token += string(ps.currentChar())
 			ps.Offset++
 			continue
 		}
@@ -370,7 +383,7 @@ func (ps *Parser) getTokens() Tokens {
 				ps.Token = ""
 			}
 			ps.Tokens.addRef(ps.TokenStack.pop())
-			ps.Tokens.add(Comma, TokenTypeArgument, "")
+			ps.Tokens.add(string(Comma), TokenTypeArgument, "")
 			ps.TokenStack.push(ps.Tokens.add("ARRAYROW", TokenTypeFunction, TokenSubTypeStart))
 			ps.Offset++
 			continue
@@ -402,7 +415,7 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		// multi-character comparators
-		if inStrSlice([]string{",>=,", ",<=,", ",<>,"}, Comma+ps.doubleChar()+Comma) != -1 {
+		if inStrSlice([]string{">=", "<=", "<>"}, ps.doubleChar()) != -1 {
 			if len(ps.Token) > 0 {
 				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
 				ps.Token = ""
@@ -413,12 +426,12 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		// standard infix operators
-		if strings.ContainsAny(OperatorsInfix, ps.currentChar()) {
+		if _, isInfix := operatorsInfix[ps.currentChar()]; isInfix {
 			if len(ps.Token) > 0 {
 				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
 				ps.Token = ""
 			}
-			ps.Tokens.add(ps.currentChar(), TokenTypeOperatorInfix, "")
+			ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorInfix, "")
 			ps.Offset++
 			continue
 		}
@@ -429,7 +442,7 @@ func (ps *Parser) getTokens() Tokens {
 				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
 				ps.Token = ""
 			}
-			ps.Tokens.add(ps.currentChar(), TokenTypeOperatorPostfix, "")
+			ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorPostfix, "")
 			ps.Offset++
 			continue
 		}
@@ -453,9 +466,9 @@ func (ps *Parser) getTokens() Tokens {
 				ps.Token = ""
 			}
 			if ps.TokenStack.tp() != TokenTypeFunction {
-				ps.Tokens.add(ps.currentChar(), TokenTypeOperatorInfix, TokenSubTypeUnion)
+				ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorInfix, TokenSubTypeUnion)
 			} else {
-				ps.Tokens.add(ps.currentChar(), TokenTypeArgument, "")
+				ps.Tokens.add(string(ps.currentChar()), TokenTypeArgument, "")
 			}
 			ps.Offset++
 			continue
@@ -473,7 +486,7 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		// token accumulation
-		ps.Token += ps.currentChar()
+		ps.Token += string(ps.currentChar())
 		ps.Offset++
 	}
 
@@ -592,16 +605,16 @@ func (ps *Parser) doubleChar() string {
 }
 
 // currentChar provides function to get the character of the current position.
-func (ps *Parser) currentChar() string {
-	return string([]rune(ps.Formula)[ps.Offset])
+func (ps *Parser) currentChar() rune {
+	return []rune(ps.Formula)[ps.Offset]
 }
 
 // nextChar provides function to get the next character of the current position.
-func (ps *Parser) nextChar() string {
+func (ps *Parser) nextChar() rune {
 	if len([]rune(ps.Formula)) >= ps.Offset+2 {
-		return string([]rune(ps.Formula)[ps.Offset+1 : ps.Offset+2])
+		return []rune(ps.Formula)[ps.Offset+1]
 	}
-	return ""
+	return 0
 }
 
 // EOF provides function to check whether end of tokens stack.
@@ -649,19 +662,19 @@ func (ps *Parser) Render() string {
 	for _, t := range ps.Tokens.Items {
 		if t.TType == TokenTypeFunction && t.TSubType == TokenSubTypeStart {
 			output.WriteString(t.TValue)
-			output.WriteString(ParenOpen)
+			output.WriteRune(ParenOpen)
 		} else if t.TType == TokenTypeFunction && t.TSubType == TokenSubTypeStop {
-			output.WriteString(ParenClose)
+			output.WriteRune(ParenClose)
 		} else if t.TType == TokenTypeSubexpression && t.TSubType == TokenSubTypeStart {
-			output.WriteString(ParenOpen)
+			output.WriteRune(ParenOpen)
 		} else if t.TType == TokenTypeSubexpression && t.TSubType == TokenSubTypeStop {
-			output.WriteString(ParenClose)
+			output.WriteRune(ParenClose)
 		} else if t.TType == TokenTypeOperand && t.TSubType == TokenSubTypeText {
-			output.WriteString(QuoteDouble)
+			output.WriteRune(QuoteDouble)
 			output.WriteString(t.TValue)
-			output.WriteString(QuoteDouble)
+			output.WriteRune(QuoteDouble)
 		} else if t.TType == TokenTypeOperatorInfix && t.TSubType == TokenSubTypeIntersection {
-			output.WriteString(Whitespace)
+			output.WriteRune(Whitespace)
 		} else {
 			output.WriteString(t.TValue)
 		}
