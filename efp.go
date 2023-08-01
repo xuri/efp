@@ -15,6 +15,7 @@ var operatorsSN map[rune]struct{}
 var operatorsInfix map[rune]struct{}
 var comparisonSet map[string]struct{}
 var errorSet map[string]struct{}
+var expRegex = regexp.MustCompile(`^[1-9]{1}(\.[0-9]+)?E{1}$`)
 
 func init() {
 	operatorsSN = make(map[rune]struct{}, len([]rune(OperatorsSN)))
@@ -326,8 +327,7 @@ func (ps *Parser) getTokens() Tokens {
 
 		// scientific notation check
 		if _, isSN := operatorsSN[ps.currentChar()]; isSN && len(ps.Token) > 1 {
-			r, _ := regexp.Compile(`^[1-9]{1}(\.[0-9]+)?E{1}$`)
-			if r.MatchString(ps.Token) {
+			if expRegex.MatchString(ps.Token) {
 				ps.Token += string(ps.currentChar())
 				ps.Offset++
 				continue
