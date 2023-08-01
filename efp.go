@@ -13,6 +13,8 @@ import (
 
 var operatorsSN map[rune]struct{}
 var operatorsInfix map[rune]struct{}
+var comparisonSet map[string]struct{}
+var errorSet map[string]struct{}
 
 func init() {
 	operatorsSN = make(map[rune]struct{}, len([]rune(OperatorsSN)))
@@ -22,6 +24,16 @@ func init() {
 	operatorsInfix = make(map[rune]struct{}, len([]rune(OperatorsInfix)))
 	for _, r := range OperatorsInfix {
 		operatorsInfix[r] = struct{}{}
+	}
+
+	comparisonSet = make(map[string]struct{}, 3)
+	for _, cmp := range []string{">=", "<=", "<>"} {
+		comparisonSet[cmp] = struct{}{}
+	}
+
+	errorSet = make(map[string]struct{}, 7)
+	for _, err := range []string{"#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"} {
+		errorSet[err] = struct{}{}
 	}
 }
 
@@ -303,7 +315,8 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.InError {
 			ps.Token += string(ps.currentChar())
 			ps.Offset++
-			if inStrSlice([]string{"#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"}, ps.Token) != -1 {
+
+			if _, isError := errorSet[ps.doubleChar()]; isError {
 				ps.InError = false
 				ps.Tokens.add(ps.Token, TokenTypeOperand, TokenSubTypeError)
 				ps.Token = ""
@@ -415,7 +428,7 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		// multi-character comparators
-		if inStrSlice([]string{">=", "<=", "<>"}, ps.doubleChar()) != -1 {
+		if _, isComparison := comparisonSet[ps.doubleChar()]; isComparison {
 			if len(ps.Token) > 0 {
 				ps.Tokens.add(ps.Token, TokenTypeOperand, "")
 				ps.Token = ""
@@ -680,15 +693,4 @@ func (ps *Parser) Render() string {
 		}
 	}
 	return output.String()
-}
-
-// inStrSlice provides a method to check if an element is present in an array,
-// and return the index of its location, otherwise return -1.
-func inStrSlice(a []string, x string) int {
-	for idx, n := range a {
-		if x == n {
-			return idx
-		}
-	}
-	return -1
 }
