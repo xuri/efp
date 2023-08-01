@@ -38,6 +38,16 @@ func init() {
 	}
 }
 
+func isInComparisonSet(r []rune) bool {
+	if len(r) < 2 {
+		return false
+	}
+
+	return r[0] == '>' && r[1] == '=' ||
+		r[0] == '<' && r[1] == '=' ||
+		r[0] == '<' && r[1] == '>'
+}
+
 // QuoteDouble, QuoteSingle and other's constants are token definitions.
 const (
 	// Character constants
@@ -432,12 +442,12 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		// multi-character comparators
-		if _, isComparison := comparisonSet[ps.doubleChar()]; isComparison {
+		if isInComparisonSet(ps.doubleChar()) {
 			if len(token) > 0 {
 				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
-			ps.Tokens.add(ps.doubleChar(), TokenTypeOperatorInfix, TokenSubTypeLogical)
+			ps.Tokens.add(string(ps.doubleChar()), TokenTypeOperatorInfix, TokenSubTypeLogical)
 			ps.Offset += 2
 			continue
 		}
@@ -614,11 +624,11 @@ func (ps *Parser) getTokens() Tokens {
 
 // doubleChar provides function to get two characters after the current
 // position.
-func (ps *Parser) doubleChar() string {
+func (ps *Parser) doubleChar() []rune {
 	if len(ps.fRune) >= ps.Offset+2 {
-		return string(ps.fRune[ps.Offset : ps.Offset+2])
+		return ps.fRune[ps.Offset : ps.Offset+2]
 	}
-	return ""
+	return nil
 }
 
 // currentChar provides function to get the character of the current position.
