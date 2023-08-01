@@ -119,11 +119,10 @@ type Parser struct {
 	Tokens     Tokens
 	TokenStack Tokens
 	Offset     int
-	//Token      string
-	InString bool
-	InPath   bool
-	InRange  bool
-	InError  bool
+	InString   bool
+	InPath     bool
+	InRange    bool
+	InError    bool
 }
 
 // fToken provides function to encapsulate a formula token.
@@ -136,9 +135,10 @@ func fToken(value []rune, tokenType, subType string) Token {
 }
 
 // fTokens provides function to handle an ordered list of tokens.
-func fTokens() Tokens {
+func fTokens(size, cap int) Tokens {
 	return Tokens{
 		Index: -1,
+		Items: make([]Token, size, cap),
 	}
 }
 
@@ -529,7 +529,7 @@ func (ps *Parser) getTokens() Tokens {
 	}
 
 	// move all tokens to a new collection, excluding all unnecessary white-space tokens
-	tokens2 := fTokens()
+	tokens2 := fTokens(0, len(ps.Tokens.Items))
 
 	for ps.Tokens.moveNext() {
 		token := ps.Tokens.current()
@@ -613,7 +613,7 @@ func (ps *Parser) getTokens() Tokens {
 	tokens2.reset()
 
 	// move all tokens to a new collection, excluding all no-ops
-	tokens := fTokens()
+	tokens := fTokens(0, len(tokens2.Items))
 	for tokens2.moveNext() {
 		if tokens2.current().TType != TokenTypeNoop {
 			tokens.addRef(Token{
