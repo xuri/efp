@@ -1,6 +1,8 @@
 package efp
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestEFP(t *testing.T) {
 	formulae := []string{
@@ -68,4 +70,22 @@ func TestEFP(t *testing.T) {
 	tk.current()
 	tk.next()
 	tk.previous()
+}
+
+func TestEFP_Nonformulas(t *testing.T) {
+	formulae := []string{
+		``,
+		`+`,
+		``,
+		`                 `,
+	}
+	for _, f := range formulae {
+		t.Run(`"`+f+`"`, func(t *testing.T) {
+			p := ExcelParser()
+			if p.Parse(f) != nil {
+				t.Log(`non-nil result given`)
+				t.Fail()
+			}
+		})
+	}
 }

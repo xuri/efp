@@ -140,6 +140,12 @@ func fToken(value string, tokenType, subType string) Token {
 
 // fTokens provides function to handle an ordered list of tokens.
 func fTokens(size, cap int) Tokens {
+	if size == 0 && cap == 0 {
+		return Tokens{
+			Index: -1,
+		}
+	}
+
 	return Tokens{
 		Index: -1,
 		Items: make([]Token, size, cap),
@@ -621,6 +627,9 @@ func (ps *Parser) getTokens() Tokens {
 	}
 
 	tokens.reset()
+	if len(tokens.Items) == 0 {
+		tokens.Items = nil
+	}
 	return tokens
 }
 
