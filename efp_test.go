@@ -1,8 +1,6 @@
 package efp
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestEFP(t *testing.T) {
 	formulae := []string{
@@ -72,7 +70,7 @@ func TestEFP(t *testing.T) {
 	tk.previous()
 }
 
-func TestEFP_Nonformulas(t *testing.T) {
+func TestNonFormulas(t *testing.T) {
 	formulae := []string{
 		``,
 		`+`,

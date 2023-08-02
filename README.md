@@ -49,7 +49,7 @@ Contributions are welcome! Open a pull request to fix a bug, or open an issue to
 
 ## Credits
 
-EFP (Excel Formula Parser) is a Golang port of [E. W. Bachtal's](https://ewbi.blogs.com/develops/2004/12/excel_formula_p.html) Excel formula parser.
+EFP (Excel Formula Parser) is a Go language port of E. W. Bachtal's Excel formula parser.
 
 ## Licenses
 

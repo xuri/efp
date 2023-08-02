@@ -1,6 +1,5 @@
 // Package efp (Excel Formula Parser) tokenize an Excel formula using an
-// implementation of E. W. Bachtal's algorithm, found here:
-// https://ewbi.blogs.com/develops/2004/12/excel_formula_p.html
+// implementation of E. W. Bachtal's algorithm.
 //
 // Go language version by Ri Xu: https://xuri.me
 package efp
@@ -10,47 +9,6 @@ import (
 	"strconv"
 	"strings"
 )
-
-var expRegex = regexp.MustCompile(`^[1-9]{1}(\.[0-9]+)?E{1}$`)
-
-// isInComparisonSet matches <=, >=, and <>
-func isInComparisonSet(r []rune) bool {
-	if len(r) < 2 {
-		return false
-	}
-	if r[0] != '>' && r[0] != '<' {
-		return false
-	}
-
-	return r[1] == '=' || (r[0] == '<' && r[1] == '>')
-}
-
-// isInfix matches any of +-*/^&=><
-func isInfix(r rune) bool {
-	return r == '+' || r == '-' || r == '*' || r == '/' || r == '^' || r == '&' || r == '=' || r == '>' || r == '<'
-}
-
-func isAnError(r []rune) bool {
-	return runesEqual(r, []rune("#NULL!")) ||
-		runesEqual(r, []rune("#DIV/0!")) ||
-		runesEqual(r, []rune("#VALUE!")) ||
-		runesEqual(r, []rune("#REF!")) ||
-		runesEqual(r, []rune("#NAME?")) ||
-		runesEqual(r, []rune("#NUM!")) ||
-		runesEqual(r, []rune("#N/A"))
-}
-
-func runesEqual(a, b []rune) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i, r := range a {
-		if b[i] != r {
-			return false
-		}
-	}
-	return true
-}
 
 // QuoteDouble, QuoteSingle and other's constants are token definitions.
 const (
@@ -98,6 +56,8 @@ const (
 	TokenSubTypeUnion         = "Union"
 )
 
+var expRegex = regexp.MustCompile(`^[1-9]{1}(\.[0-9]+)?E{1}$`)
+
 // Token encapsulate a formula token.
 type Token struct {
 	TValue   string
@@ -129,8 +89,53 @@ type Parser struct {
 	InError    bool
 }
 
+// isInComparisonSet matches <=, >=, and <>
+func isInComparisonSet(r []rune) bool {
+	if len(r) < 2 {
+		return false
+	}
+	if r[0] != '>' && r[0] != '<' {
+		return false
+	}
+	return r[1] == '=' || (r[0] == '<' && r[1] == '>')
+}
+
+// isInfix matches any of +-*/^&=><
+func isInfix(r rune) bool {
+	return r == '+' || r == '-' || r == '*' || r == '/' || r == '^' || r == '&' || r == '=' || r == '>' || r == '<'
+}
+
+// isAnError returns a value that indicates whether the given runes text
+// represents a formula error.
+func isAnError(r []rune) bool {
+	return runesEqual(r, []rune("#NULL!")) ||
+		runesEqual(r, []rune("#DIV/0!")) ||
+		runesEqual(r, []rune("#VALUE!")) ||
+		runesEqual(r, []rune("#REF!")) ||
+		runesEqual(r, []rune("#NAME?")) ||
+		runesEqual(r, []rune("#NUM!")) ||
+		runesEqual(r, []rune("#N/A")) ||
+		runesEqual(r, []rune("#SPILL!")) ||
+		runesEqual(r, []rune("#CALC!")) ||
+		runesEqual(r, []rune("#GETTING_DATA"))
+}
+
+// runesEqual Returns a value that indicates whether the current runes text and
+// a specified runes text are equal.
+func runesEqual(a, b []rune) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, r := range a {
+		if b[i] != r {
+			return false
+		}
+	}
+	return true
+}
+
 // fToken provides function to encapsulate a formula token.
-func fToken(value string, tokenType, subType string) Token {
+func fToken(value, tokenType, subType string) Token {
 	return Token{
 		TValue:   value,
 		TType:    tokenType,
@@ -145,7 +150,6 @@ func fTokens(size, cap int) Tokens {
 			Index: -1,
 		}
 	}
-
 	return Tokens{
 		Index: -1,
 		Items: make([]Token, size, cap),
@@ -153,7 +157,7 @@ func fTokens(size, cap int) Tokens {
 }
 
 // add provides function to add a token to the end of the list.
-func (tk *Tokens) add(value string, tokenType, subType string) Token {
+func (tk *Tokens) add(value, tokenType, subType string) Token {
 	token := fToken(value, tokenType, subType)
 	tk.addRef(token)
 	return token
