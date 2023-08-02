@@ -69,3 +69,21 @@ func TestEFP(t *testing.T) {
 	tk.next()
 	tk.previous()
 }
+
+func TestNonFormulas(t *testing.T) {
+	formulae := []string{
+		``,
+		`+`,
+		``,
+		`                 `,
+	}
+	for _, f := range formulae {
+		t.Run(`"`+f+`"`, func(t *testing.T) {
+			p := ExcelParser()
+			if p.Parse(f) != nil {
+				t.Log(`non-nil result given`)
+				t.Fail()
+			}
+		})
+	}
+}
