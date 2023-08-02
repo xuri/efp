@@ -108,9 +108,8 @@ type Token struct {
 // Tokens directly maps the ordered list of tokens.
 // Attributes:
 //
-//    items - Ordered list
-//    index - Current position in the list
-//
+//	items - Ordered list
+//	index - Current position in the list
 type Tokens struct {
 	Index int
 	Items []Token
@@ -266,7 +265,6 @@ func ExcelParser() Parser {
 
 // getTokens return a token stream (list).
 func (ps *Parser) getTokens() Tokens {
-
 	ps.Formula = strings.TrimSpace(ps.Formula)
 	ps.fRune = []rune(ps.Formula)
 	if len(ps.fRune) > 0 && ps.fRune[0] != '=' {
