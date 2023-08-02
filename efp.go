@@ -11,41 +11,45 @@ import (
 	"strings"
 )
 
-var operatorsSN map[rune]struct{}
-var operatorsInfix map[rune]struct{}
-var comparisonSet map[string]struct{}
-var errorSet map[string]struct{}
 var expRegex = regexp.MustCompile(`^[1-9]{1}(\.[0-9]+)?E{1}$`)
 
-func init() {
-	operatorsSN = make(map[rune]struct{}, len([]rune(OperatorsSN)))
-	for _, r := range OperatorsSN {
-		operatorsSN[r] = struct{}{}
-	}
-	operatorsInfix = make(map[rune]struct{}, len([]rune(OperatorsInfix)))
-	for _, r := range OperatorsInfix {
-		operatorsInfix[r] = struct{}{}
-	}
-
-	comparisonSet = make(map[string]struct{}, 3)
-	for _, cmp := range []string{">=", "<=", "<>"} {
-		comparisonSet[cmp] = struct{}{}
-	}
-
-	errorSet = make(map[string]struct{}, 7)
-	for _, err := range []string{"#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#NAME?", "#NUM!", "#N/A"} {
-		errorSet[err] = struct{}{}
-	}
-}
-
+// isInComparisonSet matches <=, >=, and <>
 func isInComparisonSet(r []rune) bool {
 	if len(r) < 2 {
 		return false
 	}
+	if r[0] != '>' && r[0] != '<' {
+		return false
+	}
 
-	return r[0] == '>' && r[1] == '=' ||
-		r[0] == '<' && r[1] == '=' ||
-		r[0] == '<' && r[1] == '>'
+	return r[1] == '=' || (r[0] == '<' && r[1] == '>')
+}
+
+// isInfix matches any of +-*/^&=><
+func isInfix(r rune) bool {
+	return r == '+' || r == '-' || r == '*' || r == '/' || r == '^' || r == '&' || r == '=' || r == '>' || r == '<'
+}
+
+func isAnError(r []rune) bool {
+	return runesEqual(r, []rune("#NULL!")) ||
+		runesEqual(r, []rune("#DIV/0!")) ||
+		runesEqual(r, []rune("#VALUE!")) ||
+		runesEqual(r, []rune("#REF!")) ||
+		runesEqual(r, []rune("#NAME?")) ||
+		runesEqual(r, []rune("#NUM!")) ||
+		runesEqual(r, []rune("#N/A"))
+}
+
+func runesEqual(a, b []rune) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, r := range a {
+		if b[i] != r {
+			return false
+		}
+	}
+	return true
 }
 
 // QuoteDouble, QuoteSingle and other's constants are token definitions.
@@ -96,7 +100,7 @@ const (
 
 // Token encapsulate a formula token.
 type Token struct {
-	TValue   []rune
+	TValue   string
 	TType    string
 	TSubType string
 }
@@ -104,8 +108,9 @@ type Token struct {
 // Tokens directly maps the ordered list of tokens.
 // Attributes:
 //
-//	items - Ordered list
-//	index - Current position in the list
+//    items - Ordered list
+//    index - Current position in the list
+//
 type Tokens struct {
 	Index int
 	Items []Token
@@ -126,7 +131,7 @@ type Parser struct {
 }
 
 // fToken provides function to encapsulate a formula token.
-func fToken(value []rune, tokenType, subType string) Token {
+func fToken(value string, tokenType, subType string) Token {
 	return Token{
 		TValue:   value,
 		TType:    tokenType,
@@ -143,18 +148,10 @@ func fTokens(size, cap int) Tokens {
 }
 
 // add provides function to add a token to the end of the list.
-func (tk *Tokens) add(value []rune, tokenType, subType string) Token {
+func (tk *Tokens) add(value string, tokenType, subType string) Token {
 	token := fToken(value, tokenType, subType)
 	tk.addRef(token)
 	return token
-}
-
-func (tk *Tokens) addRune(value rune, tokenType, subType string) Token {
-	return tk.add([]rune{value}, tokenType, subType)
-}
-
-func (tk *Tokens) addString(value string, tokenType, subType string) Token {
-	return tk.add([]rune(value), tokenType, subType)
 }
 
 // addRef provides function to add a token to the end of the list.
@@ -225,7 +222,7 @@ func (tk *Tokens) pop() Token {
 	}
 	t := tk.Items[len(tk.Items)-1]
 	tk.Items = tk.Items[:len(tk.Items)-1]
-	return fToken([]rune{}, t.TType, TokenSubTypeStop)
+	return fToken("", t.TType, TokenSubTypeStop)
 }
 
 // token provides function to non-destructively return the top item on the
@@ -238,9 +235,9 @@ func (tk *Tokens) token() *Token {
 }
 
 // value return the top token's value.
-func (tk *Tokens) value() []rune {
+func (tk *Tokens) value() string {
 	if tk.token() == nil {
-		return nil
+		return ""
 	}
 	return tk.token().TValue
 }
@@ -269,6 +266,7 @@ func ExcelParser() Parser {
 
 // getTokens return a token stream (list).
 func (ps *Parser) getTokens() Tokens {
+
 	ps.Formula = strings.TrimSpace(ps.Formula)
 	ps.fRune = []rune(ps.Formula)
 	if len(ps.fRune) > 0 && ps.fRune[0] != '=' {
@@ -291,7 +289,7 @@ func (ps *Parser) getTokens() Tokens {
 					ps.Offset++
 				} else {
 					ps.InString = false
-					ps.Tokens.add(token, TokenTypeOperand, TokenSubTypeText)
+					ps.Tokens.add(string(token), TokenTypeOperand, TokenSubTypeText)
 					token = token[:0]
 				}
 			} else {
@@ -337,16 +335,16 @@ func (ps *Parser) getTokens() Tokens {
 			token = append(token, ps.currentChar())
 			ps.Offset++
 
-			if _, isError := errorSet[string(token)]; isError {
+			if isAnError(token) {
 				ps.InError = false
-				ps.Tokens.add(token, TokenTypeOperand, TokenSubTypeError)
+				ps.Tokens.add(string(token), TokenTypeOperand, TokenSubTypeError)
 				token = token[:0]
 			}
 			continue
 		}
 
 		// scientific notation check
-		if _, isSN := operatorsSN[ps.currentChar()]; isSN && len(token) > 1 {
+		if len(token) > 1 && (ps.currentChar() == '+' || ps.currentChar() == '-') {
 			if expRegex.MatchString(string(token)) {
 				token = append(token, ps.currentChar())
 				ps.Offset++
@@ -359,7 +357,7 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.currentChar() == QuoteDouble {
 			if len(token) > 0 {
 				// not expected
-				ps.Tokens.add(token, TokenTypeUnknown, "")
+				ps.Tokens.add(string(token), TokenTypeUnknown, "")
 				token = token[:0]
 			}
 			ps.InString = true
@@ -370,7 +368,7 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.currentChar() == QuoteSingle {
 			if len(token) > 0 {
 				// not expected
-				ps.Tokens.add(token, TokenTypeUnknown, "")
+				ps.Tokens.add(string(token), TokenTypeUnknown, "")
 				token = token[:0]
 			}
 			ps.InPath = true
@@ -388,7 +386,7 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.currentChar() == ErrorStart {
 			if len(token) > 0 {
 				// not expected
-				ps.Tokens.add(token, TokenTypeUnknown, "")
+				ps.Tokens.add(string(token), TokenTypeUnknown, "")
 				token = token[:0]
 			}
 			ps.InError = true
@@ -401,30 +399,30 @@ func (ps *Parser) getTokens() Tokens {
 		if ps.currentChar() == BraceOpen {
 			if len(token) > 0 {
 				// not expected
-				ps.Tokens.add(token, TokenTypeUnknown, "")
+				ps.Tokens.add(string(token), TokenTypeUnknown, "")
 				token = token[:0]
 			}
-			ps.TokenStack.push(ps.Tokens.addString("ARRAY", TokenTypeFunction, TokenSubTypeStart))
-			ps.TokenStack.push(ps.Tokens.addString("ARRAYROW", TokenTypeFunction, TokenSubTypeStart))
+			ps.TokenStack.push(ps.Tokens.add("ARRAY", TokenTypeFunction, TokenSubTypeStart))
+			ps.TokenStack.push(ps.Tokens.add("ARRAYROW", TokenTypeFunction, TokenSubTypeStart))
 			ps.Offset++
 			continue
 		}
 
 		if ps.currentChar() == Semicolon {
 			if len(token) > 0 {
-				ps.Tokens.add(token, TokenTypeOperand, "")
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
 			ps.Tokens.addRef(ps.TokenStack.pop())
-			ps.Tokens.add([]rune{Comma}, TokenTypeArgument, "")
-			ps.TokenStack.push(ps.Tokens.addString("ARRAYROW", TokenTypeFunction, TokenSubTypeStart))
+			ps.Tokens.add(string(Comma), TokenTypeArgument, "")
+			ps.TokenStack.push(ps.Tokens.add("ARRAYROW", TokenTypeFunction, TokenSubTypeStart))
 			ps.Offset++
 			continue
 		}
 
 		if ps.currentChar() == BraceClose {
 			if len(token) > 0 {
-				ps.Tokens.add(token, TokenTypeOperand, "")
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
 			ps.Tokens.addRef(ps.TokenStack.pop())
@@ -436,10 +434,10 @@ func (ps *Parser) getTokens() Tokens {
 		// trim white-space
 		if ps.currentChar() == Whitespace {
 			if len(token) > 0 {
-				ps.Tokens.add(token, TokenTypeOperand, "")
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
-			ps.Tokens.addString("", TokenTypeWhitespace, "")
+			ps.Tokens.add("", TokenTypeWhitespace, "")
 			ps.Offset++
 			for (ps.currentChar() == Whitespace) && (!ps.EOF()) {
 				ps.Offset++
@@ -450,21 +448,21 @@ func (ps *Parser) getTokens() Tokens {
 		// multi-character comparators
 		if isInComparisonSet(ps.doubleChar()) {
 			if len(token) > 0 {
-				ps.Tokens.add(token, TokenTypeOperand, "")
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
-			ps.Tokens.add(ps.doubleChar(), TokenTypeOperatorInfix, TokenSubTypeLogical)
+			ps.Tokens.add(string(ps.doubleChar()), TokenTypeOperatorInfix, TokenSubTypeLogical)
 			ps.Offset += 2
 			continue
 		}
 
 		// standard infix operators
-		if _, isInfix := operatorsInfix[ps.currentChar()]; isInfix {
+		if isInfix(ps.currentChar()) {
 			if len(token) > 0 {
-				ps.Tokens.add(token, TokenTypeOperand, "")
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
-			ps.Tokens.addRune(ps.currentChar(), TokenTypeOperatorInfix, "")
+			ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorInfix, "")
 			ps.Offset++
 			continue
 		}
@@ -472,10 +470,10 @@ func (ps *Parser) getTokens() Tokens {
 		// standard postfix operators
 		if ps.currentChar() == OperatorsPostfix {
 			if len(token) > 0 {
-				ps.Tokens.add(token, TokenTypeOperand, "")
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
-			ps.Tokens.addRune(ps.currentChar(), TokenTypeOperatorPostfix, "")
+			ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorPostfix, "")
 			ps.Offset++
 			continue
 		}
@@ -483,10 +481,10 @@ func (ps *Parser) getTokens() Tokens {
 		// start subexpression or function
 		if ps.currentChar() == ParenOpen {
 			if len(token) > 0 {
-				ps.TokenStack.push(ps.Tokens.add(token, TokenTypeFunction, TokenSubTypeStart))
+				ps.TokenStack.push(ps.Tokens.add(string(token), TokenTypeFunction, TokenSubTypeStart))
 				token = token[:0]
 			} else {
-				ps.TokenStack.push(ps.Tokens.addString("", TokenTypeSubexpression, TokenSubTypeStart))
+				ps.TokenStack.push(ps.Tokens.add("", TokenTypeSubexpression, TokenSubTypeStart))
 			}
 			ps.Offset++
 			continue
@@ -495,13 +493,13 @@ func (ps *Parser) getTokens() Tokens {
 		// function, subexpression, array parameters
 		if ps.currentChar() == Comma {
 			if len(token) > 0 {
-				ps.Tokens.add(token, TokenTypeOperand, "")
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
 			if ps.TokenStack.tp() != TokenTypeFunction {
-				ps.Tokens.addRune(ps.currentChar(), TokenTypeOperatorInfix, TokenSubTypeUnion)
+				ps.Tokens.add(string(ps.currentChar()), TokenTypeOperatorInfix, TokenSubTypeUnion)
 			} else {
-				ps.Tokens.addRune(ps.currentChar(), TokenTypeArgument, "")
+				ps.Tokens.add(string(ps.currentChar()), TokenTypeArgument, "")
 			}
 			ps.Offset++
 			continue
@@ -510,7 +508,7 @@ func (ps *Parser) getTokens() Tokens {
 		// stop subexpression
 		if ps.currentChar() == ParenClose {
 			if len(token) > 0 {
-				ps.Tokens.add(token, TokenTypeOperand, "")
+				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
 			ps.Tokens.addRef(ps.TokenStack.pop())
@@ -525,7 +523,7 @@ func (ps *Parser) getTokens() Tokens {
 
 	// dump remaining accumulation
 	if len(token) > 0 {
-		ps.Tokens.add(token, TokenTypeOperand, "")
+		ps.Tokens.add(string(token), TokenTypeOperand, "")
 	}
 
 	// move all tokens to a new collection, excluding all unnecessary white-space tokens
@@ -579,7 +577,7 @@ func (ps *Parser) getTokens() Tokens {
 		}
 
 		if (token.TType == TokenTypeOperatorInfix) && (len(token.TSubType) == 0) {
-			if strings.ContainsAny(string(token.TValue[0:1]), "<>=") {
+			if token.TValue[0] == '<' || token.TValue[0] == '>' || token.TValue[0] == '=' {
 				token.TSubType = TokenSubTypeLogical
 			} else if len(token.TValue) == 1 && token.TValue[0] == '&' {
 				token.TSubType = TokenSubTypeConcatenation
@@ -675,9 +673,7 @@ func (ps *Parser) PrettyPrint() string {
 			output.WriteRune('\t')
 		}
 
-		for _, r := range t.TValue {
-			output.WriteRune(r)
-		}
+		output.WriteString(t.TValue)
 		output.WriteString(" <")
 		output.WriteString(t.TType)
 		output.WriteString("> <")
@@ -696,9 +692,7 @@ func (ps *Parser) Render() string {
 	var output strings.Builder
 	for _, t := range ps.Tokens.Items {
 		if t.TType == TokenTypeFunction && t.TSubType == TokenSubTypeStart {
-			for _, r := range t.TValue {
-				output.WriteRune(r)
-			}
+			output.WriteString(t.TValue)
 			output.WriteRune(ParenOpen)
 		} else if t.TType == TokenTypeFunction && t.TSubType == TokenSubTypeStop {
 			output.WriteRune(ParenClose)
@@ -708,16 +702,12 @@ func (ps *Parser) Render() string {
 			output.WriteRune(ParenClose)
 		} else if t.TType == TokenTypeOperand && t.TSubType == TokenSubTypeText {
 			output.WriteRune(QuoteDouble)
-			for _, r := range t.TValue {
-				output.WriteRune(r)
-			}
+			output.WriteString(t.TValue)
 			output.WriteRune(QuoteDouble)
 		} else if t.TType == TokenTypeOperatorInfix && t.TSubType == TokenSubTypeIntersection {
 			output.WriteRune(Whitespace)
 		} else {
-			for _, r := range t.TValue {
-				output.WriteRune(r)
-			}
+			output.WriteString(t.TValue)
 		}
 	}
 	return output.String()
