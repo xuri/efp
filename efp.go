@@ -491,9 +491,8 @@ func (ps *Parser) getTokens() Tokens {
 			if len(token) > 0 {
 				ps.TokenStack.push(ps.Tokens.add(string(token), TokenTypeFunction, TokenSubTypeStart))
 				token = token[:0]
-			} else {
-				ps.TokenStack.push(ps.Tokens.add("", TokenTypeSubexpression, TokenSubTypeStart))
 			}
+			ps.TokenStack.push(ps.Tokens.add(string(ps.currentChar()), TokenTypeSubexpression, TokenSubTypeStart))
 			ps.Offset++
 			continue
 		}
@@ -519,7 +518,7 @@ func (ps *Parser) getTokens() Tokens {
 				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
-			ps.Tokens.addRef(ps.TokenStack.pop())
+			ps.Tokens.add(string(ps.currentChar()), TokenTypeSubexpression, TokenSubTypeStop)
 			ps.Offset++
 			continue
 		}
