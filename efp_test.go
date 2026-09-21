@@ -50,6 +50,7 @@ func TestEFP(t *testing.T) {
 		`=1 ''`,
 		`=10*2^(2*(1+1))% (=10.28114; % has greater precedence than ^)`,
 		`=2+(10*2^(2*(1+1)+SUM(A2)))*3 (who knows, but you'll push and pop here multiple times)`,
+		`'C:\Docs\Book[A-B.XLS]C-D'!$BC14`,
 		// E. W. Bachtal's test formulae
 		`=IF(P5=1.0,"NA",IF(P5=2.0,"A",IF(P5=3.0,"B",IF(P5=4.0,"C",IF(P5=5.0,"D",IF(P5=6.0,"E",IF(P5=7.0,"F",IF(P5=8.0,"G"))))))))`,
 		`={SUM(B2:D2*B3:D3)}`,

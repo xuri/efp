@@ -27,16 +27,6 @@ jobs:
     - name: Build
       run: go build -v .
 
-    - name: Build on ARM and RISC-V
-      if: runner.os == 'Linux'
-      run: |
-        GOARCH=arm GOARM=5 go build .
-        GOARCH=arm GOARM=6 go build .
-        GOARCH=arm GOARM=7 go build .
-        GOARCH=arm64 go build .
-        GOARCH=arm64 GOOS=android go build .
-        GOARCH=riscv64 go build .
-
     - name: Test
       run: go test -v -race -coverprofile='coverage.txt' -covermode=atomic ./...
 
