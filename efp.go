@@ -421,9 +421,13 @@ func (ps *Parser) getTokens() Tokens {
 				ps.Tokens.add(string(token), TokenTypeOperand, "")
 				token = token[:0]
 			}
-			ps.Tokens.addRef(ps.TokenStack.pop())
-			ps.Tokens.add(string(Comma), TokenTypeArgument, "")
-			ps.TokenStack.push(ps.Tokens.add("ARRAYROW", TokenTypeFunction, TokenSubTypeStart))
+			if ps.TokenStack.value() == "ARRAYROW" {
+				ps.Tokens.addRef(ps.TokenStack.pop())
+				ps.Tokens.add(string(Comma), TokenTypeArgument, "")
+				ps.TokenStack.push(ps.Tokens.add("ARRAYROW", TokenTypeFunction, TokenSubTypeStart))
+			} else {
+				ps.Tokens.add(string(Semicolon), TokenTypeUnknown, "")
+			}
 			ps.Offset++
 			continue
 		}

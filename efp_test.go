@@ -6,6 +6,12 @@ func TestEFP(t *testing.T) {
 	formulae := []string{
 		`=SUM())`,
 		`=SUM("")`,
+		`=;`,
+		`=1;2`,
+		`=SUM(1;2)`,
+		`0(((;)))`,
+		`={1,2;3,4}`,
+		`={(1;2);3}`,
 		// Simple test formulae
 		`="あいうえお"&H3&"b"`,
 		`=1+3+5`,
@@ -41,6 +47,7 @@ func TestEFP(t *testing.T) {
 		`=TRUE`,
 		`=--1-1`,
 		`=1 .  +" "`,
+		`=1 ''`,
 		`=10*2^(2*(1+1))% (=10.28114; % has greater precedence than ^)`,
 		`=2+(10*2^(2*(1+1)+SUM(A2)))*3 (who knows, but you'll push and pop here multiple times)`,
 		// E. W. Bachtal's test formulae
