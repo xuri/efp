@@ -579,7 +579,11 @@ func (ps *Parser) getTokens() Tokens {
 
 		if (token.TType == TokenTypeOperatorInfix) && (len(token.TValue) == 1 && token.TValue[0] == '+') {
 			if tokens2.BOF() {
-				token.TType = TokenTypeNoop
+				if tokens2.EOF() {
+					token.TType = TokenTypeNoop
+				} else {
+					token.TSubType = TokenSubTypeMath
+				}
 			} else if (tokens2.previous().TType == TokenTypeFunction) && (tokens2.previous().TSubType == TokenSubTypeStop) || ((tokens2.previous().TType == TokenTypeSubexpression) && (tokens2.previous().TSubType == TokenSubTypeStop) || (tokens2.previous().TType == TokenTypeOperatorPostfix) || (tokens2.previous().TType == TokenTypeOperand)) {
 				token.TSubType = TokenSubTypeMath
 			} else {
