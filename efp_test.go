@@ -95,3 +95,15 @@ func TestNonFormulas(t *testing.T) {
 		})
 	}
 }
+
+func TestRenderPreservesEscapedDoubleQuotes(t *testing.T) {
+	formula := `="a""b"`
+	p := ExcelParser()
+
+	p.Parse(formula)
+
+	want := `"a""b"`
+	if got := p.Render(); got != want {
+		t.Fatalf("Render() = %q, want %q", got, want)
+	}
+}
