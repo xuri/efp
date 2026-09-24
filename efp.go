@@ -721,7 +721,7 @@ func (ps *Parser) Render() string {
 			output.WriteRune(ParenClose)
 		} else if t.TType == TokenTypeOperand && t.TSubType == TokenSubTypeText {
 			output.WriteRune(QuoteDouble)
-			output.WriteString(t.TValue)
+			output.WriteString(strings.ReplaceAll(t.TValue, string(QuoteDouble), string([]rune{QuoteDouble, QuoteDouble})))
 			output.WriteRune(QuoteDouble)
 		} else if t.TType == TokenTypeOperatorInfix && t.TSubType == TokenSubTypeIntersection {
 			output.WriteRune(Whitespace)
